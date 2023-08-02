@@ -4,12 +4,14 @@
     "dependencies": {
         "core": "*",
         "radio": "*",
-        "microphone": "*"
+        "microphone": "*",
+        "pxt-mstate": "pkg:pxt-mstate.json"
     },
     "files": [
         "main.blocks",
         "main.ts",
-        "README.md"
+        "README.md",
+        "pxt-mstate.json"
     ],
     "testFiles": [
         "test.ts"
