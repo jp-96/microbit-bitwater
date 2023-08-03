@@ -1,11 +1,3 @@
-mstate.defineStateDescription("タイムアウト", [
-"ウォッチドックの停止",
-"タイムアウトの表示",
-"__ウォッチドックの開始：__",
-"相手待ち ～ 受信完了 | 送信完了"
-], function (STATE) {
-    mstate.declareTransition(STATE, "アイドル", "")
-})
 mstate.defineStateDescription("ペア確定", ["[SN]\"moved\"の送信", "[SN]\"pairing\"=(相手のSN)の送受信(500ms)"], function (STATE) {
     mstate.declareTransition(STATE, "傾き待ち", "paringが相手と一致した")
 })
@@ -29,6 +21,9 @@ mstate.defineStateDescription("受信待ち", ["[SN]\"free\"=(空き容量)の�
 })
 mstate.defineStateDescription("送信完了", ["[SN]\"share\"=(受け渡し量)の送信"], function (STATE) {
     mstate.declareTransition(STATE, "送信減算", "[SN]\"ACK\"を受信した")
+})
+mstate.defineStateDescription("タイムアウト", ["__タイムアウト対象:__", "相手待ち ～ 受信完了 | 送信完了"], function (STATE) {
+    mstate.declareTransition(STATE, "アイドル", "")
 })
 mstate.defineStateDescription("送信者候補", ["[SN]\"sender\"の送信", "送信の表示"], function (STATE) {
     mstate.declareTransition(STATE, "送信待ち", "[SN]\"receiver\"を受信した")
