@@ -13,6 +13,16 @@ mstate.defineStateDescription("ペア確定", ["[SN]\"moved\"の送信", "[SN]\"
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
 mstate.defineStateDescription("受信者候補", ["[SN]\"receiver\"の送信", "受信の表示"], function (STATE) {
+    mstate.declareEntry(STATE, function (prev) {
+        radio.sendString("sender")
+        basic.showLeds(`
+            . . # . .
+            . . # . .
+            # . # . #
+            . # # # .
+            . . # . .
+            `)
+    })
     mstate.declareTransition(STATE, "受信待ち", "[SN]\"ACK\"を受信した")
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
@@ -22,6 +32,9 @@ mstate.defineStateDescription("受信加算", ["水量の加算", "（トリガ�
 mstate.defineStateDescription("受信完了", ["[SN]\"ACK\"の送信"], function (STATE) {
     mstate.declareTransition(STATE, "受信加算", "[SN]\"ACK\"を受信した")
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
+})
+input.onGesture(Gesture.TiltRight, function () {
+    mstate.fire("自分が傾いた")
 })
 mstate.defineStateDescription("初期化", ["容量と水量の初期化"], function (STATE) {
     mstate.declareEntry(STATE, function (prev) {
@@ -74,19 +87,27 @@ mstate.defineStateDescription("受信待ち", ["[SN]\"free\"=(空き容量)の�
     mstate.declareTransition(STATE, "受信完了", "[SN]\"share\"=(受け渡し量)を受信")
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
+input.onGesture(Gesture.TiltLeft, function () {
+    mstate.fire("自分が傾いた")
+})
 mstate.defineStateDescription("送信完了", ["[SN]\"share\"=(受け渡し量)の送信"], function (STATE) {
     mstate.declareTransition(STATE, "送信減算", "[SN]\"ACK\"を受信した")
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
 mstate.defineStateDescription("送信者候補", ["[SN]\"sender\"の送信", "送信の表示"], function (STATE) {
+    mstate.declareEntry(STATE, function (prev) {
+        radio.sendString("sender")
+        basic.showLeds(`
+            . . # . .
+            . # # # .
+            # . # . #
+            . . # . .
+            . . # . .
+            `)
+    })
     mstate.declareTransition(STATE, "送信待ち", "[SN]\"receiver\"を受信した")
     mstate.declareTransition(STATE, "送信者衝突", "[SN]\"sender\"を受信した")
     mstate.declareTransition(STATE, "傾き待ち", "[SN]\"NAK\"を受信した")
-    mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
-})
-mstate.defineStateDescription("傾き待ち", ["ペアの表示"], function (STATE) {
-    mstate.declareTransition(STATE, "送信者候補", "自分が傾いた")
-    mstate.declareTransition(STATE, "受信者候補", "[SN]\"sender\"を受信した")
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
 mstate.defineStateDescription("送信減算", ["[SN]\"ACK\"の送信", "水量の減算", "（トリガーキューのクリア）"], function (STATE) {
@@ -123,9 +144,16 @@ input.onButtonPressed(Button.AB, function () {
 radio.onReceivedString(function (receivedString) {
     if ("moved" == receivedString) {
         mstate.fireWithArgs("[SN]\"moved\"を受信した", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
+    } else if ("sender" == receivedString) {
+        mstate.fireWithArgs("[SN]\"sender\"を受信した", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
     } else {
     	
     }
+})
+mstate.defineStateName("傾き待ち", function (STATE) {
+    mstate.declareTransition(STATE, "送信者候補", "自分が傾いた")
+    mstate.declareTransition(STATE, "受信者候補", "[SN]\"sender\"を受信した")
+    mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
 radio.onReceivedValue(function (name, value) {
     if ("pairing" == name) {
@@ -163,17 +191,17 @@ mstate.defineStateDescription("相手待ち", [
 "相手の(受け渡し量)"
 ], function (STATE) {
     mstate.declareEntry(STATE, function (prev) {
+        basic.showIcon(IconNames.Yes)
         radio.sendString("moved")
         相手のSN = 0
         相手の空き容量 = 0
         相手の受け渡し量 = 0
     })
-    mstate.declareExit("State1", function (next) {
-        if (mstate.convName(next) == "ペア確定") {
-            相手のSN = mstate.getArgsOfTrigger()[0]
-        }
-    })
     mstate.declareTransition(STATE, "ペア確定", "[SN]\"moved\"を受信した")
+    mstate.declareTransitionSelectable(STATE, ["ペア確定"], "[SN]\"moved\"を受信した", function () {
+        相手のSN = mstate.getArgsOfTrigger()[0]
+        mstate.selectToAt(0)
+    })
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
 let 相手の受け渡し量 = 0
