@@ -1,5 +1,15 @@
 mstate.defineStateDescription("ペア確定", ["[SN]\"moved\"の送信", "[SN]\"pairing\"=(相手のSN)の送受信(500ms)"], function (STATE) {
-    mstate.declareTransition(STATE, "傾き待ち", "paringが相手と一致した")
+    mstate.declareEntry(STATE, function (prev) {
+        radio.sendString("moved")
+    })
+    mstate.declareDo(STATE, 500, function () {
+        radio.sendValue("pairing", 相手のSN)
+    })
+    mstate.declareTransitionSelectable(STATE, ["相手と一致した?傾き待ち"], "[SN]\"pairing\"を受信した", function () {
+        if (mstate.getArgsOfTrigger()[0] == 相手のSN && mstate.getArgsOfTrigger()[1] == control.deviceSerialNumber()) {
+            mstate.selectToAt(0)
+        }
+    })
     mstate.declareTransitionTimeout(STATE, "タイムアウト", 3000, false)
 })
 mstate.defineStateDescription("受信者候補", ["[SN]\"receiver\"の送信", "受信の表示"], function (STATE) {
@@ -112,14 +122,17 @@ input.onButtonPressed(Button.AB, function () {
 })
 radio.onReceivedString(function (receivedString) {
     if ("moved" == receivedString) {
-        最新のシリアル番号 = radio.receivedPacket(RadioPacketProperty.SerialNumber)
-        mstate.fire("[SN]\"moved\"を受信した")
+        mstate.fireWithArgs("[SN]\"moved\"を受信した", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
     } else {
     	
     }
 })
 radio.onReceivedValue(function (name, value) {
-	
+    if ("pairing" == name) {
+        mstate.fireWithArgs("[SN]\"pairing\"を受信した", [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
+    } else {
+    	
+    }
 })
 mstate.defineStateDescription("アイドル", ["水量の表示"], function (STATE) {
     mstate.declareEntry(STATE, function (prev) {
@@ -157,7 +170,7 @@ mstate.defineStateDescription("相手待ち", [
     })
     mstate.declareExit("State1", function (next) {
         if (mstate.convName(next) == "ペア確定") {
-            相手のSN = 最新のシリアル番号
+            相手のSN = mstate.getArgsOfTrigger()[0]
         }
     })
     mstate.declareTransition(STATE, "ペア確定", "[SN]\"moved\"を受信した")
@@ -165,13 +178,12 @@ mstate.defineStateDescription("相手待ち", [
 })
 let 相手の受け渡し量 = 0
 let 相手の空き容量 = 0
-let 相手のSN = 0
-let 最新のシリアル番号 = 0
 let 点滅 = 0
 let 今回の値 = 0
 let 前回の値 = 0
 let 水量 = 0
 let 容量 = 0
+let 相手のSN = 0
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
 mstate.exportUml("初期化", true, function (line) {
