@@ -1,12 +1,11 @@
-// mstate.defineStateDescription("分配待ち", ["[SN]\"ACK\"の送信"], function (STATE) {
 mstate.defineState(StateMachines.M0, "分配待ち", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("ACK")
     })
     mstate.declareTransition(machine, state, "free=", ["分配完了"], function (args) {
         if (args[0] == 相手のSN) {
-            空き容量 = args[1]
             mstate.transitTo(machine, 0)
+            空き容量 = args[1]
         }
     })
     timeoutedTransition(machine, state, 3000, "時間切れ")
@@ -17,7 +16,6 @@ function triggeredTransition (machine: number, state: number, triggerName: strin
         mstate.transitTo(machine, 0)
     })
 }
-// mstate.defineStateDescription("容量水量", ["容量と水量の初期化"], function (STATE) {
 mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         容量 = 0
@@ -51,10 +49,10 @@ mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
         }
     })
 })
+// 右に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltRight, function () {
     mstate.fire(StateMachines.M0, "tilt", [])
 })
-// mstate.defineStateDescription("ペア確定", ["[SN]\"moved\"の送信", "[SN]\"pairing\"=(相手のSN)の送受信(500ms)"], function (STATE) {
 mstate.defineState(StateMachines.M0, "ペア確定", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("moved")
@@ -70,7 +68,6 @@ mstate.defineState(StateMachines.M0, "ペア確定", function (machine, state) {
     })
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
-// mstate.defineStateDescription("受取完了", ["[SN]\"ACK\"の送信"], function (STATE) {
 mstate.defineState(StateMachines.M0, "受取完了", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("ACK")
@@ -78,10 +75,10 @@ mstate.defineState(StateMachines.M0, "受取完了", function (machine, state) {
     triggeredTransition(machine, state, "ACK", "受取加算")
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
+// 左に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltLeft, function () {
     mstate.fire(StateMachines.M0, "tilt", [])
 })
-// mstate.defineStateDescription("受取候補", ["[SN]\"receiver\"の送信", "受信の表示"], function (STATE) {
 mstate.defineState(StateMachines.M0, "受取候補", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("receiver")
@@ -96,14 +93,12 @@ mstate.defineState(StateMachines.M0, "受取候補", function (machine, state) {
     triggeredTransition(machine, state, "ACK", "受取待ち")
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
-// mstate.defineStateDescription("分配衝突", ["[SN]\"NAK\"の送信"], function (STATE) {
 mstate.defineState(StateMachines.M0, "分配衝突", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("NAK")
     })
     triggeredTransition(machine, state, "", "衝突表示")
 })
-// mstate.defineStateDescription("分配完了", ["[SN]\"share\"=(受け渡し量)の送信"], function (STATE) {
 mstate.defineState(StateMachines.M0, "分配完了", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         受け渡し量 = Math.min(空き容量, 水量)
@@ -112,7 +107,6 @@ mstate.defineState(StateMachines.M0, "分配完了", function (machine, state) {
     triggeredTransition(machine, state, "ACK", "分配減算")
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
-// mstate.defineStateDescription("分配候補", ["[SN]\"sender\"の送信", "送信の表示"], function (STATE) {
 mstate.defineState(StateMachines.M0, "分配候補", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("sender")
@@ -129,6 +123,7 @@ mstate.defineState(StateMachines.M0, "分配候補", function (machine, state) {
     triggeredTransition(machine, state, "NAK", "衝突表示")
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
+// 0～10までの数字を一文字で表示
 function showNum (value: number) {
     if (10 > value) {
         basic.showNumber(value)
@@ -142,7 +137,6 @@ function showNum (value: number) {
             `)
     }
 }
-// mstate.defineStateDescription("時間切れ", ["Xの点滅", "__タイムアウト対象:__", "相手待ち ～ 受信完了 | 送信完了"], function (STATE) {
 mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         点滅 = 0
@@ -166,7 +160,6 @@ mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
         }
     })
 })
-// mstate.defineStateDescription("衝突表示", ["衝突の表示"], function (STATE) {
 mstate.defineState(StateMachines.M0, "衝突表示", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         basic.showIcon(IconNames.Confused)
@@ -177,6 +170,7 @@ mstate.defineState(StateMachines.M0, "衝突表示", function (machine, state) {
 input.onButtonPressed(Button.AB, function () {
 	
 })
+// 無線で文字列を受信したときに、トリガー
 radio.onReceivedString(function (receivedString) {
     if ("moved" == receivedString) {
         mstate.fire(StateMachines.M0, "moved", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
@@ -192,13 +186,6 @@ radio.onReceivedString(function (receivedString) {
     	
     }
 })
-// mstate.defineStateDescription("相手待ち", [
-// "[SN]\"moved\"の送信",
-// "__初期化：__",
-// "(相手のSN)",
-// "相手の(空き容量)",
-// "相手の(受け渡し量)"
-// ], function (STATE) {
 mstate.defineState(StateMachines.M0, "相手待ち", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         basic.showIcon(IconNames.Yes)
@@ -221,6 +208,7 @@ function timeoutedTransition (machine: number, state: number, ms: number, stateN
         }
     })
 }
+// 無線でキーと値を受信したときに、トリガー（引数あり）
 radio.onReceivedValue(function (name, value) {
     if ("pairing" == name) {
         mstate.fire(StateMachines.M0, "pair=", [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
@@ -232,7 +220,6 @@ radio.onReceivedValue(function (name, value) {
     	
     }
 })
-// mstate.defineStateDescription("受取待ち", ["[SN]\"free\"=(空き容量)の送信"], function (STATE) {
 mstate.defineState(StateMachines.M0, "受取待ち", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         空き容量 = 容量 - 水量
@@ -247,13 +234,11 @@ mstate.defineState(StateMachines.M0, "受取待ち", function (machine, state) {
     })
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
-// mstate.defineStateName("傾き待ち", function (STATE) {
 mstate.defineState(StateMachines.M0, "傾き待ち", function (machine, state) {
     triggeredTransition(machine, state, "tilt", "分配候補")
     triggeredTransition(machine, state, "sender", "受取候補")
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
-// mstate.defineStateDescription("分配減算", ["[SN]\"ACK\"の送信", "水量の減算", "（トリガーキューのクリア）"], function (STATE) {
 mstate.defineState(StateMachines.M0, "分配減算", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("ACK")
@@ -261,14 +246,12 @@ mstate.defineState(StateMachines.M0, "分配減算", function (machine, state) {
     })
     triggeredTransition(machine, state, "", "アイドル")
 })
-// mstate.defineStateDescription("受取加算", ["水量の加算", "（トリガーキューのクリア）"], function (STATE) {
 mstate.defineState(StateMachines.M0, "受取加算", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         水量 += 受け渡し量
     })
     triggeredTransition(machine, state, "", "アイドル")
 })
-// mstate.defineStateDescription("アイドル", ["水量の表示"], function (STATE) {
 mstate.defineState(StateMachines.M0, "アイドル", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         showNum(水量)
