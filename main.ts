@@ -13,10 +13,10 @@ mstate.defineState(StateMachines.M0, "分配待ち", function (machine, state) {
 })
 mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
-        容量 = 0
-        水量 = 0
+        resetBitWater()
     })
     mstate.declareDo(machine, state, 500, function () {
+        waveBitWater()
         前回の値 = 今回の値
         今回の値 = 0
         if (input.buttonIsPressed(Button.A)) {
@@ -63,8 +63,6 @@ mstate.defineState(StateMachines.M0, "ペア確定", function (machine, state) {
     mstate.declareCustomTransition(machine, state, "pair=", ["傾き待ち"], function (args) {
         if (args[0] == 相手のSN && args[1] == control.deviceSerialNumber()) {
             mstate.transitTo(machine, 0)
-            // effect/
-            basic.showIcon(IconNames.Heart)
         }
     })
     mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ")
@@ -138,6 +136,22 @@ function showNum (value: number) {
             `)
     }
 }
+function waveBitWater () {
+    for (let bitwater_x = 0; bitwater_x <= 4; bitwater_x++) {
+        bitwater_y = bitwater_pos
+        if (led.point(bitwater_x, bitwater_y)) {
+            led.plotBrightness(bitwater_x, bitwater_y, bitwater_brightness)
+        }
+    }
+    for (let bitwater_x2 = 0; bitwater_x2 <= 4; bitwater_x2++) {
+        bitwater_y = bitwater_pos2
+        if (led.point(bitwater_x2, bitwater_y)) {
+            led.plotBrightness(bitwater_x2, bitwater_y, 255)
+        }
+    }
+    bitwater_pos = (bitwater_pos + 1) % 8
+    bitwater_pos2 = (bitwater_pos2 + 1) % 8
+}
 mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         resetBlink()
@@ -169,6 +183,19 @@ function resetBlink () {
 input.onButtonPressed(Button.AB, function () {
 	
 })
+function resetBitWater () {
+    bitwater_brightness = 200
+    led.setBrightness(255)
+    basic.showLeds(`
+        # # # # .
+        # # . . #
+        # # # # .
+        # # . . #
+        # # # # .
+        `)
+    bitwater_pos = 5
+    bitwater_pos2 = 7
+}
 // 無線で文字列を受信したときに、トリガー
 radio.onReceivedString(function (receivedString) {
     if ("moved" == receivedString) {
@@ -227,9 +254,15 @@ mstate.defineState(StateMachines.M0, "受取待ち", function (machine, state) {
     mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ")
 })
 mstate.defineState(StateMachines.M0, "傾き待ち", function (machine, state) {
+    mstate.declareEntry(machine, state, function () {
+        resetBitWater()
+    })
+    mstate.declareDo(machine, state, 100, function () {
+        waveBitWater()
+    })
     mstate.declareSimpleTransition(machine, state, "tilt", "分配候補")
     mstate.declareSimpleTransition(machine, state, "sender", "受取候補")
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ")
+    mstate.declareTimeoutedTransition(machine, state, 10000, "時間切れ")
 })
 mstate.defineState(StateMachines.M0, "分配減算", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
@@ -277,15 +310,18 @@ function toggleBlink () {
     }
 }
 let blink = 0
+let bitwater_pos2 = 0
+let bitwater_brightness = 0
+let bitwater_pos = 0
+let bitwater_y = 0
+let 水量 = 0
 let 受け渡し量 = 0
+let 容量 = 0
+let 今回の値 = 0
 let 前回の値 = 0
 let 空き容量 = 0
 let 相手のSN = 0
-let 今回の値 = 0
-let 水量 = 0
-let 容量 = 0
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
 resetBlink()
 mstate.start(StateMachines.M0, "容量水量")
-mstate.exportUml(StateMachines.M0, "容量水量")
