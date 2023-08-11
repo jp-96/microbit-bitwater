@@ -2,9 +2,10 @@ mstate.defineState(StateMachines.M0, "分配待ち", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("ACK")
     })
-    mstate.declareTransition(machine, state, "free=", ["分配完了"], function (args) {
+    mstate.declareCustomTransition(machine, state, "free=", ["分配完了"], function (args) {
         if (args[0] == 相手のSN) {
             mstate.transitTo(machine, 0)
+            // effect/
             空き容量 = args[1]
         }
     })
@@ -12,7 +13,7 @@ mstate.defineState(StateMachines.M0, "分配待ち", function (machine, state) {
 })
 // transition on triggered
 function triggeredTransition (machine: number, state: number, triggerName: string, stateNameTo: string) {
-    mstate.declareTransition(machine, state, triggerName, [stateNameTo], function (args) {
+    mstate.declareCustomTransition(machine, state, triggerName, [stateNameTo], function (args) {
         mstate.transitTo(machine, 0)
     })
 }
@@ -31,21 +32,27 @@ mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
             今回の値 += 1
         }
     })
-    mstate.declareTransition(machine, state, "", ["アイドル"], function (args) {
+    mstate.declareExit(machine, state, function () {
+        showNum(容量)
+    })
+    mstate.declareCustomTransition(machine, state, "", ["アイドル"], function (args) {
         if (0 < 今回の値 && 前回の値 == 今回の値) {
             mstate.transitTo(machine, 0)
-            // exit
-            if (1 == 今回の値) {
-                容量 = 3
-                水量 = 0
-            } else if (10 == 今回の値) {
-                容量 = 7
-                水量 = 0
-            } else {
-                容量 = 10
-                水量 = 10
+            // effect/
+            switch (今回の値) {
+                case 1:
+                    容量 = 3
+                    水量 = 0
+                    break
+                case 10:
+                    容量 = 7
+                    水量 = 0
+                    break
+                default:
+                    容量 = 10
+                    水量 = 10
+                    break
             }
-            showNum(容量)
         }
     })
 })
@@ -60,9 +67,10 @@ mstate.defineState(StateMachines.M0, "ペア確定", function (machine, state) {
     mstate.declareDo(machine, state, 500, function () {
         radio.sendValue("pairing", 相手のSN)
     })
-    mstate.declareTransition(machine, state, "pair=", ["傾き待ち"], function (args) {
+    mstate.declareCustomTransition(machine, state, "pair=", ["傾き待ち"], function (args) {
         if (args[0] == 相手のSN && args[1] == control.deviceSerialNumber()) {
             mstate.transitTo(machine, 0)
+            // effect/
             basic.showIcon(IconNames.Heart)
         }
     })
@@ -151,12 +159,13 @@ mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
             led.setBrightness(255)
         }
     })
-    mstate.declareTransition(machine, state, "", ["アイドル"], function (args) {
+    mstate.declareExit(machine, state, function () {
+        led.setBrightness(255)
+        basic.showIcon(IconNames.Happy)
+    })
+    mstate.declareCustomTransition(machine, state, "", ["アイドル"], function (args) {
         if (mstate.isTimeouted(machine, 2000)) {
             mstate.transitTo(machine, 0)
-            // exit
-            led.setBrightness(255)
-            basic.showIcon(IconNames.Happy)
         }
     })
 })
@@ -194,15 +203,16 @@ mstate.defineState(StateMachines.M0, "相手待ち", function (machine, state) {
         空き容量 = 0
         受け渡し量 = 0
     })
-    mstate.declareTransition(machine, state, "moved", ["ペア確定"], function (args) {
-        相手のSN = args[0]
+    mstate.declareCustomTransition(machine, state, "moved", ["ペア確定"], function (args) {
         mstate.transitTo(machine, 0)
+        // effect/
+        相手のSN = args[0]
     })
     timeoutedTransition(machine, state, 3000, "時間切れ")
 })
 // transition on timetouted
 function timeoutedTransition (machine: number, state: number, ms: number, stateNameTo: string) {
-    mstate.declareTransition(machine, state, "", [stateNameTo], function (args) {
+    mstate.declareCustomTransition(machine, state, "", [stateNameTo], function (args) {
         if (mstate.isTimeouted(machine, ms)) {
             mstate.transitTo(machine, 0)
         }
@@ -225,11 +235,11 @@ mstate.defineState(StateMachines.M0, "受取待ち", function (machine, state) {
         空き容量 = 容量 - 水量
         radio.sendValue("free", 空き容量)
     })
-    // mstate.declareTransitionSelectable(STATE, ["?受信完了"], "share=", function () {
-    mstate.declareTransition(machine, state, "share=", ["受取完了"], function (args) {
+    mstate.declareCustomTransition(machine, state, "share=", ["受取完了"], function (args) {
         if (args[0] == 相手のSN) {
-            受け渡し量 = args[1]
             mstate.transitTo(machine, 0)
+            // effect/
+            受け渡し量 = args[1]
         }
     })
     timeoutedTransition(machine, state, 3000, "時間切れ")
