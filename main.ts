@@ -32,7 +32,6 @@ mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
     mstate.declareCustomTransition(machine, state, "", ["アイドル"], function (args) {
         if (0 < 今回の値 && 前回の値 == 今回の値) {
             mstate.transitTo(machine, 0)
-            // effect/
             switch (今回の値) {
                 case 1:
                     容量 = 3
@@ -141,21 +140,14 @@ function showNum (value: number) {
 }
 mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
-        点滅 = 0
+        resetBlink()
         basic.showIcon(IconNames.No)
     })
     mstate.declareDo(machine, state, 200, function () {
-        if (0 == 点滅) {
-            点滅 = 1
-            led.setBrightness(100)
-        } else {
-            点滅 = 0
-            led.setBrightness(255)
-        }
+        toggleBlink()
     })
     mstate.declareExit(machine, state, function () {
-        led.setBrightness(255)
-        basic.showIcon(IconNames.Happy)
+        resetBlink()
     })
     mstate.declareCustomTransition(machine, state, "", ["アイドル"], function (args) {
         if (mstate.isTimeouted(machine, 2000)) {
@@ -169,6 +161,10 @@ mstate.defineState(StateMachines.M0, "衝突表示", function (machine, state) {
     })
     mstate.declareSimpleTransition(machine, state, "", "傾き待ち")
 })
+function resetBlink () {
+    blink = 0
+    led.setBrightness(255)
+}
 // シミュレーターでA+Bを同時に押す為に配置（デバッグ用）
 input.onButtonPressed(Button.AB, function () {
 	
@@ -240,13 +236,25 @@ mstate.defineState(StateMachines.M0, "分配減算", function (machine, state) {
         radio.sendString("ACK")
         水量 += -1 * 受け渡し量
     })
-    mstate.declareSimpleTransition(machine, state, "", "アイドル")
+    mstate.declareDo(machine, state, 500, function () {
+        toggleBlink()
+    })
+    mstate.declareExit(machine, state, function () {
+        resetBlink()
+    })
+    mstate.declareTimeoutedTransition(machine, state, 5000, "アイドル")
 })
 mstate.defineState(StateMachines.M0, "受取加算", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         水量 += 受け渡し量
     })
-    mstate.declareSimpleTransition(machine, state, "", "アイドル")
+    mstate.declareDo(machine, state, 500, function () {
+        toggleBlink()
+    })
+    mstate.declareExit(machine, state, function () {
+        resetBlink()
+    })
+    mstate.declareTimeoutedTransition(machine, state, 5000, "アイドル")
 })
 mstate.defineState(StateMachines.M0, "アイドル", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
@@ -259,17 +267,25 @@ mstate.defineState(StateMachines.M0, "アイドル", function (machine, state) {
     })
     mstate.declareSimpleTransition(machine, state, "lift", "相手待ち")
 })
-let 点滅 = 0
+function toggleBlink () {
+    if (0 == blink) {
+        blink = 1
+        led.setBrightness(100)
+    } else {
+        blink = 0
+        led.setBrightness(255)
+    }
+}
+let blink = 0
 let 受け渡し量 = 0
-let 今回の値 = 0
 let 前回の値 = 0
-let 水量 = 0
-let 容量 = 0
 let 空き容量 = 0
 let 相手のSN = 0
+let 今回の値 = 0
+let 水量 = 0
+let 容量 = 0
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
-// mstate.exportUml("容量水量", true, function (line) {
-// console.log(line)
-// })
+resetBlink()
 mstate.start(StateMachines.M0, "容量水量")
+mstate.exportUml(StateMachines.M0, "容量水量")
