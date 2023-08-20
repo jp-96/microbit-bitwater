@@ -26,10 +26,10 @@ mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
         waveBitWater()
         前回の値 = 今回の値
         今回の値 = 0
-        if (input.buttonIsPressed(Button.A)) {
+        if (input.buttonIsPressed(Button.A) || 0 == pins.digitalReadPin(DigitalPin.P1)) {
             今回の値 += 10
         }
-        if (input.buttonIsPressed(Button.B)) {
+        if (input.buttonIsPressed(Button.B) || 0 == pins.digitalReadPin(DigitalPin.P2)) {
             今回の値 += 1
         }
     })
@@ -101,7 +101,7 @@ mstate.defineState(StateMachines.M0, "アイドル:[動いた]lift送信", funct
         showNum(水量)
     })
     mstate.declareDo(machine, state, 100, function () {
-        if (1100 < input.acceleration(Dimension.Strength)) {
+        if (加速度閾値 < input.acceleration(Dimension.Strength)) {
             mstate.fire(StateMachines.M0, "lift", [])
         }
     })
@@ -275,7 +275,7 @@ mstate.defineState(StateMachines.M0, "置き待ち:↓表示", function (machine
     })
     mstate.declareDo(machine, state, 200, function () {
         toggleBlink()
-        if (1050 > input.acceleration(Dimension.Strength)) {
+        if (加速度閾値 > input.acceleration(Dimension.Strength)) {
             静止カウント += 1
         } else {
             静止カウント = 0
@@ -303,6 +303,10 @@ let 空き容量 = 0
 let 相手のSN = 0
 let 受け渡し量 = 0
 let 水量 = 0
+let 加速度閾値 = 0
+加速度閾値 = 1100
+pins.setPull(DigitalPin.P1, PinPullMode.PullUp)
+pins.setPull(DigitalPin.P2, PinPullMode.PullUp)
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
 resetBlink()
