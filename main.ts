@@ -3,13 +3,7 @@ mstate.defineState(StateMachines.M0, "分配減算:ACK送信", function (machine
         radio.sendString("ACK")
         水量 += -1 * 受け渡し量
     })
-    mstate.declareDo(machine, state, 500, function () {
-        toggleBlink()
-    })
-    mstate.declareExit(machine, state, function () {
-        resetBlink()
-    })
-    mstate.declareTimeoutedTransition(machine, state, 5000, "アイドル:>5s")
+    mstate.declareSimpleTransition(machine, state, "", "置き待ち")
 })
 mstate.defineState(StateMachines.M0, "分配待ち:ACK送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
@@ -22,13 +16,13 @@ mstate.defineState(StateMachines.M0, "分配待ち:ACK送信", function (machine
             空き容量 = args[1]
         }
     })
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 1000, "時間切れ::>1s")
 })
 mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         resetBitWater()
     })
-    mstate.declareDo(machine, state, 500, function () {
+    mstate.declareDo(machine, state, 200, function () {
         waveBitWater()
         前回の値 = 今回の値
         今回の値 = 0
@@ -42,40 +36,47 @@ mstate.defineState(StateMachines.M0, "容量水量", function (machine, state) {
     mstate.declareExit(machine, state, function () {
         showNum(容量)
     })
-    mstate.declareCustomTransition(machine, state, "", ["アイドル:決定"], function (args) {
+    mstate.declareCustomTransition(machine, state, "", ["置き待ち:決定"], function (args) {
         if (0 < 今回の値 && 前回の値 == 今回の値) {
             mstate.transitTo(machine, 0)
-            switch (今回の値) {
-                case 1:
-                    容量 = 3
-                    水量 = 0
-                    break
-                case 10:
-                    容量 = 7
-                    水量 = 0
-                    break
-                default:
-                    容量 = 10
-                    水量 = 10
-                    break
+            if (1 == 今回の値) {
+                容量 = 3
+                水量 = 0
+            } else if (10 == 今回の値) {
+                容量 = 7
+                水量 = 0
+            } else {
+                容量 = 10
+                水量 = 容量
             }
         }
     })
 })
 mstate.defineState(StateMachines.M0, "相手待ち:moved送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
-        basic.showIcon(IconNames.Yes)
         radio.sendString("moved")
         相手のSN = 0
         空き容量 = 0
         受け渡し量 = 0
+        resetBitWater()
     })
     mstate.declareCustomTransition(machine, state, "moved", ["ペア確定"], function (args) {
         mstate.transitTo(machine, 0)
         // effect/
         相手のSN = args[0]
     })
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 2000, "時間切れ::>2s")
+})
+mstate.defineState(StateMachines.M0, "傾き待ち:アニメーション", function (machine, state) {
+    mstate.declareEntry(machine, state, function () {
+        radio.sendValue("pair", 相手のSN)
+    })
+    mstate.declareDo(machine, state, 100, function () {
+        waveBitWater()
+    })
+    mstate.declareSimpleTransition(machine, state, "tilt", "分配候補")
+    mstate.declareSimpleTransition(machine, state, "sender", "受取候補")
+    mstate.declareTimeoutedTransition(machine, state, 5000, "時間切れ::>5s")
 })
 // 右に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltRight, function () {
@@ -93,14 +94,14 @@ mstate.defineState(StateMachines.M0, "受取待ち:free送信", function (machin
             受け渡し量 = args[1]
         }
     })
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 1000, "時間切れ::>1s")
 })
 mstate.defineState(StateMachines.M0, "アイドル:[動いた]lift送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         showNum(水量)
     })
     mstate.declareDo(machine, state, 100, function () {
-        if (1200 < input.acceleration(Dimension.Strength)) {
+        if (1100 < input.acceleration(Dimension.Strength)) {
             mstate.fire(StateMachines.M0, "lift", [])
         }
     })
@@ -109,12 +110,6 @@ mstate.defineState(StateMachines.M0, "アイドル:[動いた]lift送信", funct
 // 左に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltLeft, function () {
     mstate.fire(StateMachines.M0, "tilt", [])
-})
-mstate.defineState(StateMachines.M0, "分配衝突:NAK送信", function (machine, state) {
-    mstate.declareEntry(machine, state, function () {
-        radio.sendString("NAK")
-    })
-    mstate.declareSimpleTransition(machine, state, "", "衝突表示")
 })
 // 0～10までの数字を一文字で表示
 function showNum (value: number) {
@@ -152,7 +147,7 @@ mstate.defineState(StateMachines.M0, "分配完了:share送信", function (machi
         radio.sendValue("share", 受け渡し量)
     })
     mstate.declareSimpleTransition(machine, state, "ACK", "分配減算")
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 1000, "時間切れ::>1s")
 })
 mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
@@ -165,17 +160,7 @@ mstate.defineState(StateMachines.M0, "時間切れ", function (machine, state) {
     mstate.declareExit(machine, state, function () {
         resetBlink()
     })
-    mstate.declareCustomTransition(machine, state, "", ["アイドル"], function (args) {
-        if (mstate.isTimeouted(machine, 2000)) {
-            mstate.transitTo(machine, 0)
-        }
-    })
-})
-mstate.defineState(StateMachines.M0, "衝突表示", function (machine, state) {
-    mstate.declareEntry(machine, state, function () {
-        basic.showIcon(IconNames.Confused)
-    })
-    mstate.declareSimpleTransition(machine, state, "", "傾き待ち")
+    mstate.declareTimeoutedTransition(machine, state, 500, "置き待ち:>500ms")
 })
 function resetBlink () {
     blink = 0
@@ -227,10 +212,8 @@ radio.onReceivedValue(function (name, value) {
     }
 })
 mstate.defineState(StateMachines.M0, "ペア確定:entry/ moved送信\\ndo/ pair送信", function (machine, state) {
-    mstate.declareEntry(machine, state, function () {
+    mstate.declareDo(machine, state, 200, function () {
         radio.sendString("moved")
-    })
-    mstate.declareDo(machine, state, 500, function () {
         radio.sendValue("pair", 相手のSN)
     })
     mstate.declareCustomTransition(machine, state, "pair=", ["傾き待ち"], function (args) {
@@ -238,60 +221,29 @@ mstate.defineState(StateMachines.M0, "ペア確定:entry/ moved送信\\ndo/ pair
             mstate.transitTo(machine, 0)
         }
     })
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 2000, "時間切れ::>2s")
 })
 mstate.defineState(StateMachines.M0, "受取候補:receiver送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("receiver")
-        basic.showLeds(`
-            . . # . .
-            . . # . .
-            # . # . #
-            . # # # .
-            . . # . .
-            `)
+        basic.showIcon(IconNames.SmallHeart)
     })
     mstate.declareSimpleTransition(machine, state, "ACK", "受取待ち")
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
-})
-mstate.defineState(StateMachines.M0, "傾き待ち", function (machine, state) {
-    mstate.declareEntry(machine, state, function () {
-        resetBitWater()
-    })
-    mstate.declareDo(machine, state, 100, function () {
-        waveBitWater()
-    })
-    mstate.declareSimpleTransition(machine, state, "tilt", "分配候補")
-    mstate.declareSimpleTransition(machine, state, "sender", "受取候補")
-    mstate.declareTimeoutedTransition(machine, state, 10000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 1000, "時間切れ::>1s")
 })
 mstate.defineState(StateMachines.M0, "受取加算", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         水量 += 受け渡し量
     })
-    mstate.declareDo(machine, state, 500, function () {
-        toggleBlink()
-    })
-    mstate.declareExit(machine, state, function () {
-        resetBlink()
-    })
-    mstate.declareTimeoutedTransition(machine, state, 5000, "アイドル:>5s")
+    mstate.declareSimpleTransition(machine, state, "", "置き待ち")
 })
 mstate.defineState(StateMachines.M0, "分配候補:sender送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
         radio.sendString("sender")
-        basic.showLeds(`
-            . . # . .
-            . # # # .
-            # . # . #
-            . . # . .
-            . . # . .
-            `)
+        basic.showIcon(IconNames.Heart)
     })
     mstate.declareSimpleTransition(machine, state, "receiver", "分配待ち")
-    mstate.declareSimpleTransition(machine, state, "sender", "分配衝突")
-    mstate.declareSimpleTransition(machine, state, "NAK", "衝突表示")
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 1000, "時間切れ::>1s")
 })
 function toggleBlink () {
     if (0 == blink) {
@@ -307,8 +259,38 @@ mstate.defineState(StateMachines.M0, "受取完了:ACK送信", function (machine
         radio.sendString("ACK")
     })
     mstate.declareSimpleTransition(machine, state, "ACK", "受取加算")
-    mstate.declareTimeoutedTransition(machine, state, 3000, "時間切れ::>3s")
+    mstate.declareTimeoutedTransition(machine, state, 1000, "時間切れ::>1s")
 })
+mstate.defineState(StateMachines.M0, "置き待ち:↓表示", function (machine, state) {
+    mstate.declareEntry(machine, state, function () {
+        resetBlink()
+        basic.showLeds(`
+            . . # . .
+            . . # . .
+            # . # . #
+            . # # # .
+            . . # . .
+            `)
+        静止カウント = 0
+    })
+    mstate.declareDo(machine, state, 200, function () {
+        toggleBlink()
+        if (1050 > input.acceleration(Dimension.Strength)) {
+            静止カウント += 1
+        } else {
+            静止カウント = 0
+        }
+    })
+    mstate.declareExit(machine, state, function () {
+        resetBlink()
+    })
+    mstate.declareCustomTransition(machine, state, "", ["アイドル"], function (args) {
+        if (5 < 静止カウント) {
+            mstate.transitTo(machine, 0)
+        }
+    })
+})
+let 静止カウント = 0
 let blink = 0
 let bitwater_pos2 = 0
 let bitwater_brightness = 0
