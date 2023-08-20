@@ -111,6 +111,18 @@ mstate.defineState(StateMachines.M0, "アイドル:[動いた]lift送信", funct
 input.onGesture(Gesture.TiltLeft, function () {
     mstate.fire(StateMachines.M0, "tilt", [])
 })
+mstate.defineState(StateMachines.M0, "ペア確定:moved送信\\npair送信", function (machine, state) {
+    mstate.declareDo(machine, state, 200, function () {
+        radio.sendString("moved")
+        radio.sendValue("pair", 相手のSN)
+    })
+    mstate.declareCustomTransition(machine, state, "pair=", ["傾き待ち"], function (args) {
+        if (args[0] == 相手のSN && args[1] == control.deviceSerialNumber()) {
+            mstate.transitTo(machine, 0)
+        }
+    })
+    mstate.declareTimeoutedTransition(machine, state, 2000, "時間切れ::>2s")
+})
 // 0～10までの数字を一文字で表示
 function showNum (value: number) {
     if (10 > value) {
@@ -210,18 +222,6 @@ radio.onReceivedValue(function (name, value) {
     } else {
     	
     }
-})
-mstate.defineState(StateMachines.M0, "ペア確定:entry/ moved送信\\ndo/ pair送信", function (machine, state) {
-    mstate.declareDo(machine, state, 200, function () {
-        radio.sendString("moved")
-        radio.sendValue("pair", 相手のSN)
-    })
-    mstate.declareCustomTransition(machine, state, "pair=", ["傾き待ち"], function (args) {
-        if (args[0] == 相手のSN && args[1] == control.deviceSerialNumber()) {
-            mstate.transitTo(machine, 0)
-        }
-    })
-    mstate.declareTimeoutedTransition(machine, state, 2000, "時間切れ::>2s")
 })
 mstate.defineState(StateMachines.M0, "受取候補:receiver送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
