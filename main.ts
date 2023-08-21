@@ -98,11 +98,17 @@ mstate.defineState(StateMachines.M0, "受取待ち:free送信", function (machin
 })
 mstate.defineState(StateMachines.M0, "アイドル:[動いた]lift送信", function (machine, state) {
     mstate.declareEntry(machine, state, function () {
+        静止カウント = 0
         showNum(水量)
     })
     mstate.declareDo(machine, state, 100, function () {
-        if (加速度閾値 < input.acceleration(Dimension.Strength)) {
-            mstate.fire(StateMachines.M0, "lift", [])
+        if (加速度差閾値 > diffStrength()) {
+            静止カウント = 0
+        } else {
+            静止カウント += 1
+            if (3 < 静止カウント) {
+                mstate.fire(StateMachines.M0, "lift", [])
+            }
         }
     })
     mstate.declareSimpleTransition(machine, state, "lift", "相手待ち")
@@ -211,6 +217,11 @@ radio.onReceivedString(function (receivedString) {
     	
     }
 })
+function diffStrength () {
+    前回の値 = 今回の値
+    今回の値 = input.acceleration(Dimension.Strength)
+    return Math.abs(今回の値 - 前回の値)
+}
 // 無線でキーと値を受信したときに、トリガー（引数あり）
 radio.onReceivedValue(function (name, value) {
     if ("pair" == name) {
@@ -275,7 +286,7 @@ mstate.defineState(StateMachines.M0, "置き待ち:↓表示", function (machine
     })
     mstate.declareDo(machine, state, 200, function () {
         toggleBlink()
-        if (加速度閾値 > input.acceleration(Dimension.Strength)) {
+        if (加速度差閾値 > diffStrength()) {
             静止カウント += 1
         } else {
             静止カウント = 0
@@ -290,12 +301,12 @@ mstate.defineState(StateMachines.M0, "置き待ち:↓表示", function (machine
         }
     })
 })
-let 静止カウント = 0
 let blink = 0
 let bitwater_pos2 = 0
 let bitwater_brightness = 0
 let bitwater_pos = 0
 let bitwater_y = 0
+let 静止カウント = 0
 let 容量 = 0
 let 今回の値 = 0
 let 前回の値 = 0
@@ -303,8 +314,8 @@ let 空き容量 = 0
 let 相手のSN = 0
 let 受け渡し量 = 0
 let 水量 = 0
-let 加速度閾値 = 0
-加速度閾値 = 1100
+let 加速度差閾値 = 0
+加速度差閾値 = 17
 pins.setPull(DigitalPin.P1, PinPullMode.PullUp)
 pins.setPull(DigitalPin.P2, PinPullMode.PullUp)
 radio.setGroup(1)
