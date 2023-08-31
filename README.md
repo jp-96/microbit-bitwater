@@ -1,5 +1,5 @@
 
-> このページを開く [https://jp-96.github.io/microbit-cupwater-puzzle/](https://jp-96.github.io/microbit-cupwater-puzzle/)
+> このページを開く [https://jp-96.github.io/microbit-bitwater/](https://jp-96.github.io/microbit-bitwater/)
 
 ## ビット・ウォーター
 
@@ -22,12 +22,23 @@ HEXファイルをダウンロードして、３台のmicro:bitにインスト�
 
 * [https://makecode.microbit.org/](https://makecode.microbit.org/) を開く
 * **読み込む** をクリックし、 **URLから読み込む...** をクリックしてください
-* **https://github.com/jp-96/microbit-cupwater-puzzle** を貼り付けてインポートをクリックしてください
+* **https://github.com/jp-96/microbit-bitwater** を貼り付けてインポートをクリックしてください
+```
+https://github.com/jp-96/microbit-bitwater
+```
 * プロジェクトが表示されたら、**ダウンロード**ボタンでHEXファイルをダウンロードし、micro:bitに**インストール**してください
 * micro:bitの電源を入れ、次の操作をして、容器の容量を決定してください。  
 1台目 **ボタンA+B**を長押し：**10ビットル**の容量に（満杯）  
 2台目 **ボタンA**を長押し：**7ビットル**の容量に  
 3台目 **ボタンB**を長押し：**3ビットル**の容量に  
+
+尚、GND端子とP1端子・P2端子とを結線することにより、決定することもできます。
+|micro:bit|容量|ボタン操作|GND端子結線|
+|:-------:|:--:|:--------:|:---------:|
+|1台目|10ビットル|A+B長押し|P1端子・P2端子|
+|2台目|7ビットル|A長押し|P1端子|
+|3台目|3ビットル|B長押し|P2端子|
+
 
 #### メタデータ (検索、レンダリングに使用)
 
