@@ -46,9 +46,16 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
     })
     transitionAfter(1000, "時間切れ")
 })
-mstate.defineState(StateMachines.M0, "ペア確定", function () {
-    mstate.descriptionUml("moved送信\\npair送信")
-    mstate.declareDoActivity(200, function (counter) {
+mstate.defineState(StateMachines.M0, "相手待ち", function () {
+    mstate.descriptionUml("moved送信")
+    mstate.declareEntry(function () {
+        radio.sendString("moved")
+        resetBitWater()
+    })
+    mstate.descriptionUml("moved受信で相手のSNを保持し、movedの再送とpairの送信")
+    mstate.declareStateTransition("moved", [], function () {
+        // effect/
+        相手のSN = mstate.getTriggerArgs(StateMachines.M0)[0]
         radio.sendString("moved")
         radio.sendValue("pair", 相手のSN)
     })
@@ -57,20 +64,6 @@ mstate.defineState(StateMachines.M0, "ペア確定", function () {
         if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN && mstate.getTriggerArgs(StateMachines.M0)[1] == control.deviceSerialNumber()) {
             mstate.traverse(StateMachines.M0, 0)
         }
-    })
-    transitionAfter(2000, "時間切れ")
-})
-mstate.defineState(StateMachines.M0, "相手待ち", function () {
-    mstate.descriptionUml("moved送信")
-    mstate.declareEntry(function () {
-        radio.sendString("moved")
-        resetBitWater()
-    })
-    mstate.descriptionUml("/相手のSNを保持")
-    mstate.declareStateTransition("moved", ["ペア確定"], function () {
-        mstate.traverse(StateMachines.M0, 0)
-        // effect/
-        相手のSN = mstate.getTriggerArgs(StateMachines.M0)[0]
     })
     transitionAfter(2000, "時間切れ")
 })
