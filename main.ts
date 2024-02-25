@@ -3,6 +3,9 @@ mstate.defineState(StateMachines.M0, "置き待ち", function () {
     mstate.declareEntry(function () {
         led.setBrightness(255)
         静止カウント = 0
+        if (0 < timeouted) {
+            basic.showIcon(IconNames.No)
+        }
         basic.showIcon(IconNames.Sword)
     })
     mstate.declareDoActivity(200, function (counter) {
@@ -34,7 +37,7 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
             水量 += -1 * 受け渡し量
         }
     })
-    transitionAfter(1000, "置き待ち")
+    timeoutedTransition(1000)
 })
 mstate.defineState(StateMachines.M0, "相手待ち", function () {
     mstate.descriptionUml("moved送信")
@@ -55,27 +58,12 @@ mstate.defineState(StateMachines.M0, "相手待ち", function () {
             mstate.traverse(StateMachines.M0, 0)
         }
     })
-    transitionAfter(2000, "置き待ち")
+    timeoutedTransition(2000)
 })
 // 右に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltRight, function () {
     mstate.sendTrigger(StateMachines.M0, "tilt")
 })
-function transitionAfter (ms: number, target: string) {
-    mstate.declareDoActivity(ms, function (counter) {
-        timeouted = counter
-    })
-    if ("置き待ち" == target) {
-        mstate.descriptionUml(":" + "after " + ms + "ms")
-    } else {
-        mstate.descriptionUml("after " + ms + "ms")
-    }
-    mstate.declareStateTransition("", [target], function () {
-        if (0 < timeouted) {
-            mstate.traverse(StateMachines.M0, 0)
-        }
-    })
-}
 mstate.defineState(StateMachines.M0, "傾き待ち", function () {
     mstate.declareEntry(function () {
         radio.sendValue("pair", 相手のSN)
@@ -86,7 +74,7 @@ mstate.defineState(StateMachines.M0, "傾き待ち", function () {
     })
     mstate.declareSimpleTransition("tilt", "分配候補")
     mstate.declareSimpleTransition("sender", "受取待ち")
-    transitionAfter(5000, "置き待ち")
+    timeoutedTransition(5000)
 })
 mstate.defineState(StateMachines.M0, "容量水量", function () {
     mstate.descriptionUml("容量の選択")
@@ -197,6 +185,17 @@ function initBitWater (設定容量: number, 設定水量: number) {
     水量 = 設定水量
     showNum(容量)
 }
+function timeoutedTransition (ms: number) {
+    mstate.declareDoActivity(ms, function (counter) {
+        timeouted = counter
+    })
+    mstate.descriptionUml(":" + "after " + ms + "ms")
+    mstate.declareStateTransition("", ["置き待ち"], function () {
+        if (0 < timeouted) {
+            mstate.traverse(StateMachines.M0, 0)
+        }
+    })
+}
 // 無線でキーと値を受信したときに、トリガー（引数あり）
 radio.onReceivedValue(function (name, value) {
     mstate.sendTriggerArgs(StateMachines.M0, name, [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
@@ -214,7 +213,7 @@ mstate.defineState(StateMachines.M0, "受取待ち", function () {
             水量 += mstate.getTriggerArgs(StateMachines.M0)[1]
         }
     })
-    transitionAfter(1000, "置き待ち")
+    timeoutedTransition(1000)
 })
 let 容量 = 0
 let bitwater_pos2 = 0
@@ -223,10 +222,10 @@ let bitwater_pos = 0
 let bitwater_y = 0
 let 今回の値 = 0
 let 前回の値 = 0
-let timeouted = 0
 let 水量 = 0
 let 受け渡し量 = 0
 let 相手のSN = 0
+let timeouted = 0
 let 静止カウント = 0
 let 加速度差閾値 = 0
 加速度差閾値 = 17
