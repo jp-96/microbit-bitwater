@@ -96,12 +96,14 @@ mstate.defineState(StateMachines.M0, "容量水量", function () {
     mstate.declareStateTransition("", ["置き待ち"], function () {
         if (0 < 今回の値 && 前回の値 == 今回の値) {
             mstate.traverse(StateMachines.M0, 0)
+            水量 = 0
             if (1 == 今回の値) {
-                initBitWater(3, 0)
+                容量 = 3
             } else if (10 == 今回の値) {
-                initBitWater(7, 0)
+                容量 = 7
             } else {
-                initBitWater(10, 10)
+                容量 = 10
+                水量 = 3
             }
         }
     })
@@ -180,11 +182,6 @@ function diffStrength () {
     今回の値 = input.acceleration(Dimension.Strength)
     return Math.abs(今回の値 - 前回の値)
 }
-function initBitWater (設定容量: number, 設定水量: number) {
-    容量 = 設定容量
-    水量 = 設定水量
-    showNum(容量)
-}
 function timeoutedTransition (ms: number) {
     mstate.declareDoActivity(ms, function (counter) {
         timeouted = counter
@@ -215,11 +212,11 @@ mstate.defineState(StateMachines.M0, "受取待ち", function () {
     })
     timeoutedTransition(1000)
 })
-let 容量 = 0
 let bitwater_pos2 = 0
 let bitwater_brightness = 0
 let bitwater_pos = 0
 let bitwater_y = 0
+let 容量 = 0
 let 今回の値 = 0
 let 前回の値 = 0
 let 水量 = 0
