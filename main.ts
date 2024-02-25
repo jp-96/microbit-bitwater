@@ -35,12 +35,13 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
         radio.sendString("sender")
         basic.showIcon(IconNames.Heart)
     })
-    mstate.descriptionUml("期待する相手のSN/相手の空き容量を保持")
-    mstate.declareStateTransition("free", ["分配完了"], function () {
+    mstate.descriptionUml("期待する相手のSN/share送信と水量の減算")
+    mstate.declareStateTransition("free", ["置き待ち"], function () {
         if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN) {
             mstate.traverse(StateMachines.M0, 0)
-            // effect/
-            空き容量 = mstate.getTriggerArgs(StateMachines.M0)[1]
+            受け渡し量 = Math.min(mstate.getTriggerArgs(StateMachines.M0)[1], 水量)
+            radio.sendValue("share", 受け渡し量)
+            水量 += -1 * 受け渡し量
         }
     })
     transitionAfter(1000, "時間切れ")
@@ -63,9 +64,6 @@ mstate.defineState(StateMachines.M0, "相手待ち", function () {
     mstate.descriptionUml("moved送信")
     mstate.declareEntry(function () {
         radio.sendString("moved")
-        相手のSN = 0
-        空き容量 = 0
-        受け渡し量 = 0
         resetBitWater()
     })
     mstate.descriptionUml("/相手のSNを保持")
@@ -79,21 +77,6 @@ mstate.defineState(StateMachines.M0, "相手待ち", function () {
 // 右に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltRight, function () {
     mstate.sendTrigger(StateMachines.M0, "tilt")
-})
-mstate.defineState(StateMachines.M0, "分配完了", function () {
-    mstate.descriptionUml("受け渡し量=相手の空き容量または自分の水量")
-    mstate.descriptionUml("share送信")
-    mstate.declareEntry(function () {
-        受け渡し量 = Math.min(空き容量, 水量)
-        radio.sendValue("share", 受け渡し量)
-    })
-    mstate.descriptionUml("ACK送信と水量-=受け渡し量")
-    mstate.declareStateTransition("ACK", ["置き待ち"], function () {
-        mstate.traverse(StateMachines.M0, 0)
-        radio.sendString("ACK")
-        水量 += -1 * 受け渡し量
-    })
-    transitionAfter(1000, "時間切れ")
 })
 function transitionAfter (ms: number, target: string) {
     mstate.declareDoActivity(ms, function (counter) {
@@ -268,31 +251,17 @@ function toggleBlink () {
         led.setBrightness(255)
     }
 }
-mstate.defineState(StateMachines.M0, "受取完了", function () {
-    mstate.descriptionUml("ACK送信")
-    mstate.declareEntry(function () {
-        radio.sendString("ACK")
-    })
-    mstate.descriptionUml("/水量+=受け渡し量")
-    mstate.declareStateTransition("ACK", ["置き待ち"], function () {
-        mstate.traverse(StateMachines.M0, 0)
-        水量 += 受け渡し量
-    })
-    transitionAfter(1000, "時間切れ")
-})
 mstate.defineState(StateMachines.M0, "受取待ち", function () {
     mstate.descriptionUml("free送信")
     mstate.declareEntry(function () {
-        空き容量 = 容量 - 水量
-        radio.sendValue("free", 空き容量)
+        radio.sendValue("free", 容量 - 水量)
         basic.showIcon(IconNames.SmallHeart)
     })
-    mstate.descriptionUml("期待する相手のSN/受け渡し量を保持")
-    mstate.declareStateTransition("share", ["受取完了"], function () {
+    mstate.descriptionUml("期待する相手のSN/水量の加算")
+    mstate.declareStateTransition("share", ["置き待ち"], function () {
         if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN) {
             mstate.traverse(StateMachines.M0, 0)
-            // effect/
-            受け渡し量 = mstate.getTriggerArgs(StateMachines.M0)[1]
+            水量 += mstate.getTriggerArgs(StateMachines.M0)[1]
         }
     })
     transitionAfter(1000, "時間切れ")
@@ -308,7 +277,6 @@ let 前回の値 = 0
 let timeouted = 0
 let 水量 = 0
 let 受け渡し量 = 0
-let 空き容量 = 0
 let 相手のSN = 0
 let 静止カウント = 0
 let 加速度差閾値 = 0
