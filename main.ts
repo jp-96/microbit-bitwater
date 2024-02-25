@@ -2,14 +2,8 @@ mstate.defineState(StateMachines.M0, "置き待ち", function () {
     mstate.descriptionUml("↓表示")
     mstate.declareEntry(function () {
         led.setBrightness(255)
-        basic.showLeds(`
-            . . # . .
-            . . # . .
-            # . # . #
-            . # # # .
-            . . # . .
-            `)
         静止カウント = 0
+        basic.showIcon(IconNames.Sword)
     })
     mstate.declareDoActivity(200, function (counter) {
         if (加速度差閾値 > diffStrength()) {
@@ -29,7 +23,7 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
     mstate.descriptionUml("sender送信")
     mstate.declareEntry(function () {
         radio.sendString("sender")
-        basic.showIcon(IconNames.Heart)
+        basic.showIcon(IconNames.Yes)
     })
     mstate.descriptionUml("期待する相手のSN/share送信と水量の減算")
     mstate.declareStateTransition("free", ["置き待ち"], function () {
@@ -225,7 +219,7 @@ mstate.defineState(StateMachines.M0, "受取待ち", function () {
     mstate.descriptionUml("free送信")
     mstate.declareEntry(function () {
         radio.sendValue("free", 容量 - 水量)
-        basic.showIcon(IconNames.SmallHeart)
+        basic.showIcon(IconNames.Diamond)
     })
     mstate.descriptionUml("期待する相手のSN/水量の加算")
     mstate.declareStateTransition("share", ["置き待ち"], function () {
