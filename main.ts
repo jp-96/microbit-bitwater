@@ -1,7 +1,7 @@
 mstate.defineState(StateMachines.M0, "置き待ち", function () {
     mstate.descriptionUml("↓表示")
     mstate.declareEntry(function () {
-        resetBlink()
+        led.setBrightness(255)
         basic.showLeds(`
             . . # . .
             . . # . .
@@ -12,15 +12,11 @@ mstate.defineState(StateMachines.M0, "置き待ち", function () {
         静止カウント = 0
     })
     mstate.declareDoActivity(200, function (counter) {
-        toggleBlink()
         if (加速度差閾値 > diffStrength()) {
             静止カウント += 1
         } else {
             静止カウント = 0
         }
-    })
-    mstate.declareExit(function () {
-        resetBlink()
     })
     mstate.descriptionUml("静止1s")
     mstate.declareStateTransition("", ["アイドル"], function () {
@@ -185,21 +181,11 @@ function waveBitWater () {
 mstate.defineState(StateMachines.M0, "時間切れ", function () {
     mstate.descriptionUml("✕表示")
     mstate.declareEntry(function () {
-        resetBlink()
+        led.setBrightness(255)
         basic.showIcon(IconNames.No)
-    })
-    mstate.declareDoActivity(200, function (counter) {
-        toggleBlink()
-    })
-    mstate.declareExit(function () {
-        resetBlink()
     })
     transitionAfter(500, "置き待ち")
 })
-function resetBlink () {
-    blink = 0
-    led.setBrightness(255)
-}
 // シミュレーターでA+Bを同時に押す為に配置（デバッグ用）
 input.onButtonPressed(Button.AB, function () {
 	
@@ -235,15 +221,6 @@ function initBitWater (設定容量: number, 設定水量: number) {
 radio.onReceivedValue(function (name, value) {
     mstate.sendTriggerArgs(StateMachines.M0, name, [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
 })
-function toggleBlink () {
-    if (0 == blink) {
-        blink = 1
-        led.setBrightness(100)
-    } else {
-        blink = 0
-        led.setBrightness(255)
-    }
-}
 mstate.defineState(StateMachines.M0, "受取待ち", function () {
     mstate.descriptionUml("free送信")
     mstate.declareEntry(function () {
@@ -260,7 +237,6 @@ mstate.defineState(StateMachines.M0, "受取待ち", function () {
     transitionAfter(1000, "時間切れ")
 })
 let 容量 = 0
-let blink = 0
 let bitwater_pos2 = 0
 let bitwater_brightness = 0
 let bitwater_pos = 0
@@ -278,7 +254,6 @@ pins.setPull(DigitalPin.P1, PinPullMode.PullUp)
 pins.setPull(DigitalPin.P2, PinPullMode.PullUp)
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
-resetBlink()
 mstate.start(StateMachines.M0, "容量水量")
 mstate.exportUml(StateMachines.M0, "容量水量", false)
 radio.sendString("hello")
