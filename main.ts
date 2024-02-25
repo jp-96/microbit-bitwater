@@ -35,7 +35,14 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
         radio.sendString("sender")
         basic.showIcon(IconNames.Heart)
     })
-    mstate.declareSimpleTransition("receiver", "分配待ち")
+    mstate.descriptionUml("期待する相手のSN/相手の空き容量を保持")
+    mstate.declareStateTransition("free", ["分配完了"], function () {
+        if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN) {
+            mstate.traverse(StateMachines.M0, 0)
+            // effect/
+            空き容量 = mstate.getTriggerArgs(StateMachines.M0)[1]
+        }
+    })
     transitionAfter(1000, "時間切れ")
 })
 mstate.defineState(StateMachines.M0, "ペア確定", function () {
@@ -68,15 +75,6 @@ mstate.defineState(StateMachines.M0, "相手待ち", function () {
         相手のSN = mstate.getTriggerArgs(StateMachines.M0)[0]
     })
     transitionAfter(2000, "時間切れ")
-})
-mstate.defineState(StateMachines.M0, "受取候補", function () {
-    mstate.descriptionUml("receiver送信")
-    mstate.declareEntry(function () {
-        radio.sendString("receiver")
-        basic.showIcon(IconNames.SmallHeart)
-    })
-    mstate.declareSimpleTransition("ACK", "受取待ち")
-    transitionAfter(1000, "時間切れ")
 })
 // 右に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltRight, function () {
@@ -121,7 +119,7 @@ mstate.defineState(StateMachines.M0, "傾き待ち", function () {
         waveBitWater()
     })
     mstate.declareSimpleTransition("tilt", "分配候補")
-    mstate.declareSimpleTransition("sender", "受取候補")
+    mstate.declareSimpleTransition("sender", "受取待ち")
     transitionAfter(5000, "時間切れ")
 })
 mstate.defineState(StateMachines.M0, "容量水量", function () {
@@ -282,26 +280,12 @@ mstate.defineState(StateMachines.M0, "受取完了", function () {
     })
     transitionAfter(1000, "時間切れ")
 })
-mstate.defineState(StateMachines.M0, "分配待ち", function () {
-    mstate.descriptionUml("ACK送信")
-    mstate.declareEntry(function () {
-        radio.sendString("ACK")
-    })
-    mstate.descriptionUml("期待する相手のSN/相手の空き容量を保持")
-    mstate.declareStateTransition("free", ["分配完了"], function () {
-        if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN) {
-            mstate.traverse(StateMachines.M0, 0)
-            // effect/
-            空き容量 = mstate.getTriggerArgs(StateMachines.M0)[1]
-        }
-    })
-    transitionAfter(1000, "時間切れ")
-})
 mstate.defineState(StateMachines.M0, "受取待ち", function () {
     mstate.descriptionUml("free送信")
     mstate.declareEntry(function () {
         空き容量 = 容量 - 水量
         radio.sendValue("free", 空き容量)
+        basic.showIcon(IconNames.SmallHeart)
     })
     mstate.descriptionUml("期待する相手のSN/受け渡し量を保持")
     mstate.declareStateTransition("share", ["受取完了"], function () {
