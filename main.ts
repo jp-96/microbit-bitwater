@@ -34,7 +34,7 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
             水量 += -1 * 受け渡し量
         }
     })
-    transitionAfter(1000, "時間切れ")
+    transitionAfter(1000, "置き待ち")
 })
 mstate.defineState(StateMachines.M0, "相手待ち", function () {
     mstate.descriptionUml("moved送信")
@@ -55,7 +55,7 @@ mstate.defineState(StateMachines.M0, "相手待ち", function () {
             mstate.traverse(StateMachines.M0, 0)
         }
     })
-    transitionAfter(2000, "時間切れ")
+    transitionAfter(2000, "置き待ち")
 })
 // 右に傾いたときに、トリガー(tilt)
 input.onGesture(Gesture.TiltRight, function () {
@@ -65,7 +65,7 @@ function transitionAfter (ms: number, target: string) {
     mstate.declareDoActivity(ms, function (counter) {
         timeouted = counter
     })
-    if ("時間切れ" == target) {
+    if ("置き待ち" == target) {
         mstate.descriptionUml(":" + "after " + ms + "ms")
     } else {
         mstate.descriptionUml("after " + ms + "ms")
@@ -86,7 +86,7 @@ mstate.defineState(StateMachines.M0, "傾き待ち", function () {
     })
     mstate.declareSimpleTransition("tilt", "分配候補")
     mstate.declareSimpleTransition("sender", "受取待ち")
-    transitionAfter(5000, "時間切れ")
+    transitionAfter(5000, "置き待ち")
 })
 mstate.defineState(StateMachines.M0, "容量水量", function () {
     mstate.descriptionUml("容量の選択")
@@ -172,30 +172,16 @@ function waveBitWater () {
     bitwater_pos = (bitwater_pos + 1) % 8
     bitwater_pos2 = (bitwater_pos2 + 1) % 8
 }
-mstate.defineState(StateMachines.M0, "時間切れ", function () {
-    mstate.descriptionUml("✕表示")
-    mstate.declareEntry(function () {
-        led.setBrightness(255)
-        basic.showIcon(IconNames.No)
-    })
-    transitionAfter(500, "置き待ち")
-})
 // シミュレーターでA+Bを同時に押す為に配置（デバッグ用）
 input.onButtonPressed(Button.AB, function () {
 	
 })
 function resetBitWater () {
     bitwater_brightness = 200
-    led.setBrightness(255)
-    basic.showLeds(`
-        # # # # .
-        # # . . #
-        # # # # .
-        # # . . #
-        # # # # .
-        `)
     bitwater_pos = 5
     bitwater_pos2 = 7
+    led.setBrightness(255)
+    basic.showString("B")
 }
 // 無線で文字列を受信したときに、トリガー
 radio.onReceivedString(function (receivedString) {
@@ -228,7 +214,7 @@ mstate.defineState(StateMachines.M0, "受取待ち", function () {
             水量 += mstate.getTriggerArgs(StateMachines.M0)[1]
         }
     })
-    transitionAfter(1000, "時間切れ")
+    transitionAfter(1000, "置き待ち")
 })
 let 容量 = 0
 let bitwater_pos2 = 0
