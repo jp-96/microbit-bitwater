@@ -263,19 +263,7 @@ function resetBitWater () {
 }
 // 無線で文字列を受信したときに、トリガー
 radio.onReceivedString(function (receivedString) {
-    if ("moved" == receivedString) {
-        mstate.sendTriggerArgs(StateMachines.M0, "moved", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
-    } else if ("sender" == receivedString) {
-        mstate.sendTriggerArgs(StateMachines.M0, "sender", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
-    } else if ("receiver" == receivedString) {
-        mstate.sendTriggerArgs(StateMachines.M0, "receiver", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
-    } else if ("NAK" == receivedString) {
-        mstate.sendTriggerArgs(StateMachines.M0, "NAK", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
-    } else if ("ACK" == receivedString) {
-        mstate.sendTriggerArgs(StateMachines.M0, "ACK", [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
-    } else {
-    	
-    }
+    mstate.sendTriggerArgs(StateMachines.M0, receivedString, [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
 })
 function diffStrength () {
     前回の値 = 今回の値
@@ -295,15 +283,7 @@ function initBitWater (設定容量: number, 設定水量: number) {
 }
 // 無線でキーと値を受信したときに、トリガー（引数あり）
 radio.onReceivedValue(function (name, value) {
-    if ("pair" == name) {
-        mstate.sendTriggerArgs(StateMachines.M0, "pair", [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
-    } else if ("free" == name) {
-        mstate.sendTriggerArgs(StateMachines.M0, "free", [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
-    } else if ("share" == name) {
-        mstate.sendTriggerArgs(StateMachines.M0, "share", [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
-    } else {
-    	
-    }
+    mstate.sendTriggerArgs(StateMachines.M0, name, [radio.receivedPacket(RadioPacketProperty.SerialNumber), value])
 })
 function toggleBlink () {
     if (0 == blink) {
