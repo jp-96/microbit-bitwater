@@ -25,7 +25,7 @@ mstate.defineState(StateMachines.M0, "置き待ち", function () {
 mstate.defineState(StateMachines.M0, "分配候補", function () {
     mstate.descriptionUml("sender送信")
     mstate.declareEntry(function () {
-        radio.sendString("sender")
+        radio.sendValue("sender", 0)
         basic.showIcon(IconNames.Yes)
     })
     mstate.descriptionUml("期待する相手のSN/share送信と水量の減算")
@@ -42,14 +42,14 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
 mstate.defineState(StateMachines.M0, "相手待ち", function () {
     mstate.descriptionUml("moved送信")
     mstate.declareEntry(function () {
-        radio.sendString("moved")
+        radio.sendValue("moved", 0)
         resetBitWater()
     })
     mstate.descriptionUml("moved受信で相手のSNを保持し、movedの再送とpairの送信")
     mstate.declareStateTransition("moved", [], function () {
         // effect/
         相手のSN = mstate.getTriggerArgs(StateMachines.M0)[0]
-        radio.sendString("moved")
+        radio.sendValue("moved", 0)
         radio.sendValue("pair", 相手のSN)
     })
     mstate.descriptionUml("互いのSNが一致")
@@ -173,10 +173,6 @@ function resetBitWater () {
     led.setBrightness(255)
     basic.showString("B")
 }
-// 無線で文字列を受信したときに、トリガー
-radio.onReceivedString(function (receivedString) {
-    mstate.sendTriggerArgs(StateMachines.M0, receivedString, [radio.receivedPacket(RadioPacketProperty.SerialNumber)])
-})
 function diffStrength () {
     前回の値 = 今回の値
     今回の値 = input.acceleration(Dimension.Strength)
@@ -232,4 +228,4 @@ radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
 mstate.start(StateMachines.M0, "容量水量")
 mstate.exportUml(StateMachines.M0, "容量水量", false)
-radio.sendString("hello")
+radio.sendValue("hello", 0)
