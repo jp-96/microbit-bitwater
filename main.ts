@@ -1,5 +1,5 @@
 mstate.defineState(StateMachines.M0, "置き待ち", function () {
-    mstate.descriptionUml("↓表示")
+    // mstate.descriptionUml("↓表示")
     mstate.declareEntry(function () {
         led.setBrightness(255)
         静止カウント = 0
@@ -28,7 +28,8 @@ mstate.defineState(StateMachines.M0, "分配候補", function () {
         radio.sendValue("sender", 0)
         basic.showIcon(IconNames.Yes)
     })
-    mstate.descriptionUml("期待する相手のSN/share送信と水量の減算")
+    // mstate.descriptionUml("期待する相手のSN/share送信と水量の減算")
+    mstate.descriptionUml("相手/share送信と減算")
     mstate.declareStateTransition("free", ["置き待ち"], function () {
         if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN) {
             mstate.traverse(StateMachines.M0, 0)
@@ -45,14 +46,16 @@ mstate.defineState(StateMachines.M0, "相手待ち", function () {
         radio.sendValue("moved", 0)
         resetBitWater()
     })
-    mstate.descriptionUml("moved受信で相手のSNを保持し、movedの再送とpairの送信")
+    // mstate.descriptionUml("moved受信で相手のSNを保持し、movedの再送とpairの送信")
+    mstate.descriptionUml("moved受信（moved再送とpair送信）")
     mstate.declareStateTransition("moved", [], function () {
         // effect/
         相手のSN = mstate.getTriggerArgs(StateMachines.M0)[0]
         radio.sendValue("moved", 0)
         radio.sendValue("pair", 相手のSN)
     })
-    mstate.descriptionUml("互いのSNが一致")
+    // mstate.descriptionUml("互いのSNが一致")
+    mstate.descriptionUml("相手")
     mstate.declareStateTransition("pair", ["傾き待ち"], function () {
         if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN && mstate.getTriggerArgs(StateMachines.M0)[1] == control.deviceSerialNumber()) {
             mstate.traverse(StateMachines.M0, 0)
@@ -68,7 +71,7 @@ mstate.defineState(StateMachines.M0, "傾き待ち", function () {
     mstate.declareEntry(function () {
         radio.sendValue("pair", 相手のSN)
     })
-    mstate.descriptionUml("アニメーション")
+    // mstate.descriptionUml("アニメーション")
     mstate.declareDoActivity(100, function (counter) {
         waveBitWater()
     })
@@ -77,7 +80,7 @@ mstate.defineState(StateMachines.M0, "傾き待ち", function () {
     timeoutedTransition(5000)
 })
 mstate.defineState(StateMachines.M0, "容量水量", function () {
-    mstate.descriptionUml("容量の選択")
+    // mstate.descriptionUml("容量の選択")
     mstate.declareEntry(function () {
         resetBitWater()
     })
@@ -92,7 +95,7 @@ mstate.defineState(StateMachines.M0, "容量水量", function () {
             今回の値 += 1
         }
     })
-    mstate.descriptionUml("選択/容量と水量の初期化")
+    // mstate.descriptionUml("選択/容量と水量の初期化")
     mstate.declareStateTransition("", ["置き待ち"], function () {
         if (0 < 今回の値 && 前回の値 == 今回の値) {
             mstate.traverse(StateMachines.M0, 0)
@@ -113,7 +116,7 @@ input.onGesture(Gesture.TiltLeft, function () {
     mstate.sendTrigger(StateMachines.M0, "tilt")
 })
 mstate.defineState(StateMachines.M0, "アイドル", function () {
-    mstate.descriptionUml("水量を表示して待つ")
+    // mstate.descriptionUml("水量を表示して待つ")
     mstate.declareEntry(function () {
         静止カウント = 0
         showNum(水量)
@@ -182,7 +185,8 @@ function timeoutedTransition (ms: number) {
     mstate.declareDoActivity(ms, function (counter) {
         timeouted = counter
     })
-    mstate.descriptionUml(":" + "after " + ms + "ms")
+    // mstate.descriptionUml(":" + "after " + ms + "ms")
+    mstate.descriptionUml(":after " + ms + "ms")
     mstate.declareStateTransition("", ["置き待ち"], function () {
         if (0 < timeouted) {
             mstate.traverse(StateMachines.M0, 0)
@@ -199,7 +203,8 @@ mstate.defineState(StateMachines.M0, "受取待ち", function () {
         radio.sendValue("free", 容量 - 水量)
         basic.showIcon(IconNames.Diamond)
     })
-    mstate.descriptionUml("期待する相手のSN/水量の加算")
+    // mstate.descriptionUml("期待する相手のSN/水量の加算")
+    mstate.descriptionUml("相手/加算")
     mstate.declareStateTransition("share", ["置き待ち"], function () {
         if (mstate.getTriggerArgs(StateMachines.M0)[0] == 相手のSN) {
             mstate.traverse(StateMachines.M0, 0)
@@ -226,6 +231,6 @@ pins.setPull(DigitalPin.P1, PinPullMode.PullUp)
 pins.setPull(DigitalPin.P2, PinPullMode.PullUp)
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
+// mstate.exportUml(StateMachines.M0, "容量水量", false)
 mstate.start(StateMachines.M0, "容量水量")
-mstate.exportUml(StateMachines.M0, "容量水量", false)
 radio.sendValue("hello", 0)
