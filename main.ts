@@ -106,7 +106,7 @@ mstate.defineState(StateMachines.M0, "容量水量", function () {
                 容量 = 7
             } else {
                 容量 = 10
-                水量 = 3
+                水量 = 10
             }
         }
     })
@@ -231,6 +231,6 @@ pins.setPull(DigitalPin.P1, PinPullMode.PullUp)
 pins.setPull(DigitalPin.P2, PinPullMode.PullUp)
 radio.setGroup(1)
 radio.setTransmitSerialNumber(true)
-// mstate.exportUml(StateMachines.M0, "容量水量", false)
+mstate.exportUml(StateMachines.M0, "容量水量", ModeExportUML.StateDiagram)
 mstate.start(StateMachines.M0, "容量水量")
 radio.sendValue("hello", 0)
